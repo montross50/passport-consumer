@@ -1,0 +1,57 @@
+{
+    "name": "montross50/passport-consumer",
+    "type": "library",
+    "description": "",
+    "keywords": [
+        "laravel",
+        "laravel 5.6"
+    ],
+    "homepage": "https://github.com/montross50/passport-consumer",
+    "license": "MIT",
+    "authors": [{
+        "name": "Trent Schmidt",
+        "email": "sch43228@gmail.com",
+        "role": "Developer"
+    }],
+    "require": {
+        "php": "~5.6|~7.0",
+        "Illuminate/support": "^5.0,<5.7",
+        "laravel/passport": "^5.0",
+        "optimus/api-consumer": "^0.2.3",
+        "guzzlehttp/guzzle": "~6.0"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.1",
+        "phpunit/phpunit": "~7.0",
+        "orchestra/testbench": "~3.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Montross50\\PassportConsumer\\": "src\/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests\/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "format": [
+            "vendor/bin/phpcbf --standard=psr2 src/",
+            "vendor/bin/phpcbf --standard=psr2 tests/"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Montross50\\PassportConsumer\\PassportConsumerServiceProvider"
+            ]
+        }
+    },
+      "config": {
+        "preferred-install": "dist",
+        "sort-packages": true
+      },
+    "minimum-stability": "stable"
+}
