@@ -13,46 +13,59 @@ This package will add some helpful commands to artisan. These commands are prima
 composer require montross50/passport-consumer
 ~~~
 
-## Available Commands
-
-```
-  ach:build            Builds the containers with docker compose
-  ach:clean            Cleans up the containers with docker compose
-  ach:clean-images     Removes dangling images with docker
-  ach:dump             Composer dump autoload in the php workspace container
-  ach:ide-helper       Runs the ide-helper in the php workspace container
-  ach:install          Composer installs in the php workspace container
-  ach:migrate          Migrate the database
-  ach:rebuild          Spins up the containers with docker compose and rebuild them
-  ach:run              Spins up the containers with docker compose (alias for up)
-  ach:seed             Seed your database
-  ach:stop             Stops the containers with docker compose
-  ach:up               Spins up the containers with docker compose
-  ach:update           Composer updates in the php workspace container
-```
-
 ## Environment configuration
 
-There are several environment variables you can add to your .env that will allow you to customize the commands. This is designed to work out of the box for a standard laravel install with docker and laradock or similiar. Below are the env vars and their defaults.
-
-* ACH_DOCKER_PATH = docker
-    * Path to docker executable
-* ACH_DOCKER_COMPOSE_PATH = docker-compose
-    * Path to docker-compose executable
-* ACH_COMPOSER_PATH = composer
-    * Path to composer executable
-* ACH_NAMESPACE = ach 
-    * Namespace that commands resolve at via artisan ie ach:up. Just in case you have something on that namespace
-* ACH_PHP_CONTAINER = workspace
-    * Container to run php commands in
-* ACH_IDE_HELPER_MODELS_OPTIONS = -n
-    * Options for ide-helper:models. These options have special chars in them often so artisan won't play nice 
-
-Alternatively you can publish the config file.
+Publish the config file:
 
 ~~~
 php artisan vendor:publish --provider="Montross50\PassportConsumer\PassportConsumerServiceProvider" --tag=config
 ~~~
+
+There are a LOT of config options. Probably too many. The package should work out of the box with a default laravel install aside from defining the required env variables somewhere. The main config options to take note of are:
+
+* enable_pg
+    * If set to true then the password grant routes are loaded.
+* enable_access
+    * If set to true then the authorization code routes are loaded 
+* passport_location
+    * If set to local then it is assumed the given app is the app with passport installed. If not it is expected that this value is your passport server url.
+* log_user_in
+    * If set to true the following happens:
+        * User is retrieved from user_endpoint 
+        * If remote passport:
+            * Find local user for remote user
+            * Create local user using defaults and data from remote if not found
+        * Log user in using session guard
+        * The access_token and refresh_token will be in the session.
+
+Required env variables:
+
+* PC_PASSPORT_SECRET_PG
+    * The passport secret access key for you password grant client
+* PC_PASSPORT_SECRET_ACCESS
+    * The passport secret access key for you authorization code client
+* PC_PASSPORT_ID_PG
+    * The passport client id for your password grant client
+* PC_PASSPORT_ID_ACCESS
+    * The passport client id for you authorization code client
+
+### User Model
+
+If you are working with a remote passport install then add the `Montross50\PassportConsumer\HasRemoteTokens` Trait to your Users model. 
+
+The log_user_in functionality will create users to pair with a remote user if the local user cannot be found. Default values and fields are defined on the trait and must be overridden if you need to add more defaults for new user.
+
+
+
+### Run Migrations
+
+This package adds an api_token and configurable remote_user_id field to your users model. This only happens if you have your package configured for remote passport.
+
+~~~
+php artisan migrate
+~~~
+
+
 
 ## Change log
 

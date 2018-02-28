@@ -5,8 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Montross50\PassportConsumer\LoginProxy;
 use Orchestra\Testbench\Http\Kernel;
 
-
-class LoginProxyLocalTest extends TestCase
+class LoginProxyRemoteTest extends TestCase
 {
     /**
      * @var LoginProxy
@@ -16,7 +15,9 @@ class LoginProxyLocalTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->artisan('migrate', ['--database' => 'mysql']);
         $auth_provider = config('passport-consumer.auth_provider_key');
+        config(['auth.guards.api.driver' => 'token']);
         config([$auth_provider=>User::class]);
         $this->seedPassport();
         $this->proxy = null;
@@ -30,10 +31,10 @@ class LoginProxyLocalTest extends TestCase
         $password = 'bar';
         factory(User::class)->create(['email' => $email,'password'=>bcrypt($password)]);
 
-        $result = $this->proxy->attemptLogin($email,$password);
-        $this->assertArrayHasKey('access_token',$result);
-        $this->assertArrayHasKey('refresh_token',$result);
-        $this->assertArrayHasKey('expires_in',$result);
+        $result = $this->proxy->attemptLogin($email, $password);
+        $this->assertArrayHasKey('access_token', $result);
+        $this->assertArrayHasKey('refresh_token', $result);
+        $this->assertArrayHasKey('expires_in', $result);
     }
 
 
@@ -43,18 +44,18 @@ class LoginProxyLocalTest extends TestCase
         $password = 'bar';
         factory(User::class)->create(['email' => $email,'password'=>bcrypt($password)]);
 
-        $result = $this->proxy->attemptLogin($email,$password);
-        $this->assertArrayHasKey('access_token',$result);
-        $this->assertArrayHasKey('refresh_token',$result);
-        $this->assertArrayHasKey('expires_in',$result);
+        $result = $this->proxy->attemptLogin($email, $password);
+        $this->assertArrayHasKey('access_token', $result);
+        $this->assertArrayHasKey('refresh_token', $result);
+        $this->assertArrayHasKey('expires_in', $result);
         $id = (new \Lcobucci\JWT\Parser())->parse($result['access_token'])->getHeader('jti');
         $token = \Laravel\Passport\Token::find($id);
         $token->expires_at = \Carbon\Carbon::now()->subMinute();
         $token->save();
         $refresh = $this->proxy->attemptRefresh($result['refresh_token']);
-        $this->assertArrayHasKey('access_token',$refresh);
-        $this->assertArrayHasKey('refresh_token',$refresh);
-        $this->assertArrayHasKey('expires_in',$refresh);
+        $this->assertArrayHasKey('access_token', $refresh);
+        $this->assertArrayHasKey('refresh_token', $refresh);
+        $this->assertArrayHasKey('expires_in', $refresh);
         $this->assertNotEquals($result['access_token'], $refresh['access_token']);
         $this->assertNotEquals($result['refresh_token'], $refresh['refresh_token']);
     }
@@ -68,10 +69,10 @@ class LoginProxyLocalTest extends TestCase
          */
         $user = factory(User::class)->create(['email' => $email,'password'=>bcrypt($password)]);
 
-        $result = $this->proxy->attemptLogin($email,$password);
-        $this->assertArrayHasKey('access_token',$result);
-        $this->assertArrayHasKey('refresh_token',$result);
-        $this->assertArrayHasKey('expires_in',$result);
+        $result = $this->proxy->attemptLogin($email, $password);
+        $this->assertArrayHasKey('access_token', $result);
+        $this->assertArrayHasKey('refresh_token', $result);
+        $this->assertArrayHasKey('expires_in', $result);
         $accessToken = $result['access_token'];
         $id = (new \Lcobucci\JWT\Parser())->parse($accessToken)->getHeader('jti');
         $token = \Laravel\Passport\Token::find($id);
@@ -115,6 +116,4 @@ class LoginProxyLocalTest extends TestCase
             ]
         ]);
     }
-
-
 }

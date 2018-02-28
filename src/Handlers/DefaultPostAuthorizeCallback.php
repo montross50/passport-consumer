@@ -1,5 +1,6 @@
 <?php
-namespace Montross50\PassportConsumer;
+namespace Montross50\PassportConsumer\Handlers;
+
 /**
  * This is the default post authorize callback. It is expected that you override this either with you rown implemntation of the interface or your own closure. By default it will return the json of the token info
  *
@@ -7,7 +8,8 @@ namespace Montross50\PassportConsumer;
  *
  * @package Montross50\PassportConsumer
  */
-class PostAuthorizePostAuthorizeCallback implements PostAuthorizeCallbackInterface {
+class DefaultPostAuthorizeCallback implements PostAuthorizeCallbackInterface
+{
 
     private $closure;
 
@@ -32,5 +34,4 @@ class PostAuthorizePostAuthorizeCallback implements PostAuthorizeCallbackInterfa
         //closureception
         return $closure($args);
     }
-
 }

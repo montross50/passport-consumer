@@ -1,5 +1,5 @@
 <?php
-namespace Montross50\PassportProxy;
+namespace Montross50\PassportConsumer;
 
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 

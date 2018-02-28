@@ -1,10 +1,11 @@
 {
     "name": "montross50/passport-consumer",
     "type": "library",
-    "description": "",
+    "description": "Library to consume laravel passport, handle oauth endpoints, and map remote users to local",
     "keywords": [
         "laravel",
-        "laravel 5.6"
+        "laravel 5.6",
+        "passport"
     ],
     "homepage": "https://github.com/montross50/passport-consumer",
     "license": "MIT",
@@ -16,9 +17,11 @@
     "require": {
         "php": "~5.6|~7.0",
         "Illuminate/support": "^5.0,<5.7",
+        "doctrine/dbal": "^2.6",
+        "guzzlehttp/guzzle": "~6.0",
         "laravel/passport": "^5.0",
-        "optimus/api-consumer": "^0.2.3",
-        "guzzlehttp/guzzle": "~6.0"
+        "mockery/mockery": "^1.0",
+        "optimus/api-consumer": "^0.2.3"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.1",
@@ -36,7 +39,7 @@
         }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit",
+        "test": "vendor/bin/phpunit -c phpunit.xml",
         "format": [
             "vendor/bin/phpcbf --standard=psr2 src/",
             "vendor/bin/phpcbf --standard=psr2 tests/"

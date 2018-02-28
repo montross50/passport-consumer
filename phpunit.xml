@@ -10,9 +10,22 @@
          stopOnFailure="false"
          syntaxCheck="false"
 >
+    <php>
+        <env name="PC_PASSPORT_SECRET_PG" value="WvY6bQpPGCZ0K90XPGigiEHdRbXg2mJuzNxvLCaU"/>
+        <env name="PC_PASSPORT_SECRET_ACCESS" value="xafLtLnVqpq3WJLVeUC4SIoWFekDkgmrt11q0Tqv"/>
+        <env name="PC_PASSPORT_ID_PG" value="2"/>
+        <env name="PC_PASSPORT_ID_ACCESS" value="1"/>
+        <env name="APP_KEY" value="base64:C6HETTSZm6VinlXQSVSJ819onIsXqBlgf9EVHlGVxNU="/>
+    </php>
     <testsuites>
         <testsuite name="Package Test Suite">
-            <directory suffix=".php">./tests/</directory>
+            <directory suffix=".php">./tests/Unit/</directory>
+            <directory suffix=".php">./tests/Feature/</directory>
         </testsuite>
     </testsuites>
+    <filter>
+        <whitelist>
+            <directory suffix=".php">./src/</directory>
+        </whitelist>
+    </filter>
 </phpunit>

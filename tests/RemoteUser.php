@@ -6,8 +6,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Passport\HasApiTokens;
 use Montross50\PassportConsumer\HasRemoteTokens;
 
-
-class User extends Authenticatable
+class RemoteUser extends Authenticatable
 {
     use HasApiTokens, HasRemoteTokens;
 
@@ -18,6 +17,4 @@ class User extends Authenticatable
     protected $hidden = [
       'password'
     ];
-
-
 }

@@ -13,7 +13,17 @@ class AddPassportConsumerColumnsToUser extends Migration
      */
     public function up()
     {
-        //
+        Schema::table(config('passport-consumer.user_table'), function (Blueprint $table) {
+
+            if(config('passport-consumer.passport_location') !== 'local'){
+                $remoteUserIdentifier = config('passport-consumer.remote_user_identifier');
+                if (!Schema::hasColumn(config('passport-consumer.user_table') ,$remoteUserIdentifier)) {
+                    $table->string($remoteUserIdentifier)->nullable()->unique();
+                }
+                $table->string('api_token')->nullable();
+            }
+
+        });
     }
 
     /**
@@ -23,6 +33,22 @@ class AddPassportConsumerColumnsToUser extends Migration
      */
     public function down()
     {
-        //
+        Schema::table(config('passport-consumer.user_table'), function (Blueprint $table) {
+            if(config('passport-consumer.passport_location') !== 'local'){
+                $table->dropColumn('api_token');
+            }
+        });
+
+        Schema::table(config('passport-consumer.user_table'), function (Blueprint $table) {
+
+            if(config('passport-consumer.passport_location') !== 'local'){
+                if(config('passport-consumer.remove_remote_user_identifier_on_rollback')){
+                    $remoteUserIdentifier = config('passport-consumer.remote_user_identifier');
+                    $table->dropColumn($remoteUserIdentifier);
+                }
+            }
+
+
+        });
     }
 }

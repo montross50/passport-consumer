@@ -1,12 +1,11 @@
-<?php namespace Tests;
+<?php namespace Tests\Unit;
 
-use Illuminate\Foundation\Auth\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Laravel\Passport\Passport;
 use Montross50\PassportConsumer\LoginProxy;
-use Orchestra\Testbench\Http\Kernel;
-
+use Montross50\PassportConsumer\Handlers\PostAuthorizeCallbackInterface;
+use Montross50\PassportConsumer\Handlers\DefaultPostAuthorizeCallback;
+use Tests\TestCase;
+use Tests\User;
 
 class PassportConsumerControllerTest extends TestCase
 {
@@ -17,6 +16,7 @@ class PassportConsumerControllerTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->artisan('migrate', ['--database' => 'mysql']);
         $auth_provider = config('passport-consumer.auth_provider_key');
         config([$auth_provider=>User::class]);
         $this->seedPassport();
@@ -26,7 +26,6 @@ class PassportConsumerControllerTest extends TestCase
     {
         $this->routeName = '/'.config('passport-consumer.route_name_'.$type);
         $this->routePrefix = config('passport-consumer.route_prefix');
-
     }
 
     public function testLoginReturnsToken()
@@ -35,13 +34,13 @@ class PassportConsumerControllerTest extends TestCase
         $password = 'bar';
         $login = \Mockery::mock(LoginProxy::class);
         $login->shouldReceive('attemptLogin')
-            ->with($email,$password,"")
+            ->with($email, $password, "")
             ->andReturn([
                'access_token'=>'foobar',
                'expires_in'=>'598',
                'refresh_token'=>'foobar'
             ]);
-        $this->app->instance(LoginProxy::class,$login);
+        $this->app->instance(LoginProxy::class, $login);
         $this->configRoute('pg');
 
         factory(User::class)->create(['email' => $email,'password'=>$password]);
@@ -68,7 +67,7 @@ class PassportConsumerControllerTest extends TestCase
                 'expires_in'=>'598',
                 'refresh_token'=>'foobar2'
             ]);
-        $this->app->instance(LoginProxy::class,$login);
+        $this->app->instance(LoginProxy::class, $login);
         $this->withoutMiddleware();
         $result = $this->json('POST', $this->routePrefix . $this->routeName .'/refresh', ['refresh_token' => $refreshToken]);
         $data = $result->json();
@@ -88,7 +87,7 @@ class PassportConsumerControllerTest extends TestCase
         $this->configRoute('pg');
         $login = \Mockery::mock(LoginProxy::class);
         $login->shouldReceive('logout');
-        $this->app->instance(LoginProxy::class,$login);
+        $this->app->instance(LoginProxy::class, $login);
         $this->withoutMiddleware();
         $result = $this->json('POST', $this->routePrefix . $this->routeName .'/logout', []);
         $result
@@ -112,6 +111,75 @@ class PassportConsumerControllerTest extends TestCase
             ->assertRedirect("$loc/oauth/authorize?$query");
     }
 
+    public function testRedirectRemote()
+    {
+        config(['passport-consumer.app_url'=>'foobar.com']);
+        $this->configRoute('access');
+        $loc = '';
+        $appUrl = config('passport-consumer.app_url');
+        $query = http_build_query([
+            'client_id' => config('passport-consumer.passport_id_access'),
+            'redirect_uri' => "$appUrl/$this->routePrefix$this->routeName/callback",
+            'response_type' => 'code',
+            'scope' => '',
+        ]);
+
+        $result = $this->json('GET', $this->routePrefix . $this->routeName .'/redirect', []);
+        $result
+            ->assertRedirect("$loc/oauth/authorize?$query");
+    }
+
+    public function testCallbackDefault()
+    {
+        $this->configRoute('access');
+        $code = 'foobar';
+        $login = \Mockery::mock(LoginProxy::class);
+        $appUrl = config('passport-consumer.app_url');
+        $login->shouldReceive('proxy')
+            ->with('authorization_code', ['redirect_uri'=>"$appUrl/$this->routePrefix$this->routeName/callback",'code'=>$code])
+            ->andReturn([
+                'access_token'=>'foobar',
+                'expires_in'=>'598',
+                'refresh_token'=>'foobar'
+            ]);
+        $this->app->instance(LoginProxy::class, $login);
+        $result = $this->json('GET', $this->routePrefix . $this->routeName .'/callback?code='.$code, []);
+        $result
+            ->assertStatus(200)
+            ->assertJson([
+                "access_token"  => true,
+                "expires_in"    => true,
+                'refresh_token' => true
+            ]);
+    }
+
+    public function testCallbackCustom()
+    {
+
+        $this->app->bind(PostAuthorizeCallbackInterface::class, function () {
+            $func = function ($token) {
+                return "wow it worked ". current($token)['access_token'];
+            };
+            return new DefaultPostAuthorizeCallback($func);
+        });
+        $this->configRoute('access');
+        $code = 'foobar';
+        $login = \Mockery::mock(LoginProxy::class);
+        $appUrl = config('passport-consumer.app_url');
+        $login->shouldReceive('proxy')
+            ->with('authorization_code', ['redirect_uri'=>"$appUrl/$this->routePrefix$this->routeName/callback",'code'=>$code])
+            ->andReturn([
+                'access_token'=>'foobar',
+                'expires_in'=>'598',
+                'refresh_token'=>'foobar'
+            ]);
+        $this->app->instance(LoginProxy::class, $login);
+        $result = $this->json('GET', $this->routePrefix . $this->routeName .'/callback?code='.$code, []);
+        $result
+            ->assertStatus(200)
+            ->assertSee("wow it worked foobar");
+    }
+
     public function testRefreshWorksAccess()
     {
         $this->configRoute('access');
@@ -125,7 +193,7 @@ class PassportConsumerControllerTest extends TestCase
                 'expires_in'=>'598',
                 'refresh_token'=>'foobar2'
             ]);
-        $this->app->instance(LoginProxy::class,$login);
+        $this->app->instance(LoginProxy::class, $login);
         $this->withoutMiddleware();
         $result = $this->json('POST', $this->routePrefix . $this->routeName .'/refresh', ['refresh_token' => $refreshToken]);
         $data = $result->json();
@@ -171,6 +239,4 @@ class PassportConsumerControllerTest extends TestCase
             ]
         ]);
     }
-
-
 }

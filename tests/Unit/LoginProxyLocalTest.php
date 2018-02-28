@@ -1,46 +1,52 @@
 <?php namespace Tests;
 
-use Illuminate\Foundation\Auth\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Orchestra\Testbench\Http\Kernel;
+use Montross50\PassportConsumer\InvalidCredentialsException;
+use Montross50\PassportConsumer\LoginProxy;
 
-
-class PassportConsumerControllerTest extends TestCase
+class LoginProxyLocalTest extends TestCase
 {
-
-    protected $routePrefix;
-    protected $routeName;
+    /**
+     * @var LoginProxy
+     */
+    protected $proxy;
 
     public function setUp()
     {
         parent::setUp();
+        $this->artisan('migrate', ['--database' => 'mysql']);
         $auth_provider = config('passport-consumer.auth_provider_key');
+        config(['auth.guards.api.driver' => 'passport']);
         config([$auth_provider=>User::class]);
         $this->seedPassport();
+        $this->proxy = null;
+        $this->proxy = app(LoginProxy::class);
     }
 
-    public function configRoute($type)
+    /**
+     * @expectedException \Montross50\PassportConsumer\InvalidCredentialsException
+     */
+    public function testLoginReturnsExceptionOnUserNotFound()
     {
-        $this->routeName = '/'.config('passport-consumer.route_name_'.$type);
-        $this->routePrefix = config('passport-consumer.route_prefix');
 
+        $email = 'foo@example.com';
+        $password = 'bar';
+
+        $result = $this->proxy->attemptLogin($email, $password);
     }
 
     public function testLoginReturnsToken()
     {
-        //$login = Mocker
-        $this->configRoute('pg');
+
         $email = 'foo@example.com';
         $password = 'bar';
-        factory(User::class)->create(['email' => $email,'password'=>$password]);
-        $response = $this->json('POST', $this->routePrefix . $this->routeName . '/login', ['email' => $email, 'password' => $password]);
-        $response
-            ->assertStatus(200)
-            ->assertJson([
-                "access_token"  => true,
-                "expires_in"    => true,
-                'refresh_token' => true
-            ]);
+        factory(User::class)->create(['email' => $email,'password'=>bcrypt($password)]);
+
+        $result = $this->proxy->attemptLogin($email, $password);
+        $this->assertArrayHasKey('access_token', $result);
+        $this->assertArrayHasKey('refresh_token', $result);
+        $this->assertArrayHasKey('expires_in', $result);
     }
 
 
@@ -48,61 +54,46 @@ class PassportConsumerControllerTest extends TestCase
     {
         $email = 'foo@example.com';
         $password = 'bar';
-        factory(User::class)->create(['email' => $email]);
-        $response = $this->json('POST', 'login', ['email' => $email, 'password' => $password]);
+        factory(User::class)->create(['email' => $email,'password'=>bcrypt($password)]);
 
-        $response
-            ->assertStatus(200)
-            ->assertJson([
-                "access_token"  => true,
-                "expires_in"    => true,
-                'refresh_token' => true
-            ]);
-        $accessToken = $response->json()['access_token'];
-        $refreshToken = $response->json()['refresh_token'];
-        $id = (new \Lcobucci\JWT\Parser())->parse($accessToken)->getHeader('jti');
+        $result = $this->proxy->attemptLogin($email, $password);
+        $this->assertArrayHasKey('access_token', $result);
+        $this->assertArrayHasKey('refresh_token', $result);
+        $this->assertArrayHasKey('expires_in', $result);
+        $id = (new \Lcobucci\JWT\Parser())->parse($result['access_token'])->getHeader('jti');
         $token = \Laravel\Passport\Token::find($id);
         $token->expires_at = \Carbon\Carbon::now()->subMinute();
         $token->save();
-        $result = $this->json('POST', 'login/refresh', ['refresh_token' => $refreshToken], [
-            'Accept'        => 'application/json',
-            'Authorization' => 'Bearer ' . $accessToken,
-        ]);
-        $data = $result->json();
-        $result
-            ->assertStatus(200)
-            ->assertJson([
-                "access_token"  => true,
-                "expires_in"    => true,
-                'refresh_token' => true
-            ]);
-        $this->assertNotEquals($accessToken, $data['access_token']);
-        $this->assertNotEquals($refreshToken, $data['refresh_token']);
+        $refresh = $this->proxy->attemptRefresh($result['refresh_token']);
+        $this->assertArrayHasKey('access_token', $refresh);
+        $this->assertArrayHasKey('refresh_token', $refresh);
+        $this->assertArrayHasKey('expires_in', $refresh);
+        $this->assertNotEquals($result['access_token'], $refresh['access_token']);
+        $this->assertNotEquals($result['refresh_token'], $refresh['refresh_token']);
     }
 
     public function testLogout()
     {
         $email = 'foo@example.com';
         $password = 'bar';
-        factory(User::class)->create(['email' => $email]);
-        $response = $this->json('POST', 'login', ['email' => $email, 'password' => $password]);
+        /**
+         * @var $user User
+         */
+        $user = factory(User::class)->create(['email' => $email,'password'=>bcrypt($password)]);
 
-        $response
-            ->assertStatus(200)
-            ->assertJson([
-                "access_token"  => true,
-                "expires_in"    => true,
-                'refresh_token' => true
-            ]);
-        $accessToken = $response->json()['access_token'];
-        $result = $this->json('POST', 'logout', [], [
-            'Accept'        => 'application/json',
-            'Authorization' => 'Bearer ' . $accessToken,
-        ]);
-        $result
-            ->assertStatus(204);
+        $result = $this->proxy->attemptLogin($email, $password);
+        $this->assertArrayHasKey('access_token', $result);
+        $this->assertArrayHasKey('refresh_token', $result);
+        $this->assertArrayHasKey('expires_in', $result);
+        $accessToken = $result['access_token'];
         $id = (new \Lcobucci\JWT\Parser())->parse($accessToken)->getHeader('jti');
         $token = \Laravel\Passport\Token::find($id);
+        $user->withAccessToken($token);
+        Auth::setUser($user);
+        $this->proxy->logout();
+
+
+        $token->refresh();
         $this->assertEquals(1, $token->revoked);
     }
 
@@ -137,6 +128,4 @@ class PassportConsumerControllerTest extends TestCase
             ]
         ]);
     }
-
-
 }
