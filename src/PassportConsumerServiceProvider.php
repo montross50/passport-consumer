@@ -41,7 +41,7 @@ class PassportConsumerServiceProvider extends ServiceProvider
     {
         $configPath = __DIR__ . '/../config/passport-consumer.php';
         $this->mergeConfigFrom($configPath, 'passport-consumer');
-        if ($location = config('passport-consumer.passport_location') !== 'local') {
+        if (($location = config('passport-consumer.passport_location')) !== 'local') {
             $this->app->singleton('apiconsumer', function () use ($location) {
                 return new Client([
                     'base_uri' => $location,
