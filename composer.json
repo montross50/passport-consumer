@@ -19,11 +19,11 @@
         "Illuminate/support": "^5.0,<5.7",
         "doctrine/dbal": "^2.6",
         "guzzlehttp/guzzle": "~6.0",
-        "laravel/passport": "^5.0",
         "mockery/mockery": "^1.0",
         "optimus/api-consumer": "^0.2.3"
     },
     "require-dev": {
+        "laravel/passport": "^5.0",
         "squizlabs/php_codesniffer": "^3.1",
         "phpunit/phpunit": "~7.0",
         "orchestra/testbench": "~3.6"
