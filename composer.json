@@ -42,7 +42,8 @@
         "test": "vendor/bin/phpunit -c phpunit.xml",
         "format": [
             "vendor/bin/phpcbf --standard=psr2 src/",
-            "vendor/bin/phpcbf --standard=psr2 tests/"
+            "vendor/bin/phpcbf --standard=psr2 tests/",
+            "vendor/bin/phpcbf --standard=psr2 migrations/"
         ]
     },
     "extra": {

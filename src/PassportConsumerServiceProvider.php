@@ -25,7 +25,7 @@ class PassportConsumerServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->loadRoutesFrom(__DIR__ . '/routes.php');
-        $this->loadMigrationsFrom(__DIR__.'/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../migrations');
         $configPath = __DIR__ . '/../config/passport-consumer.php';
         $publishPath = config_path('passport-consumer.php');
 
