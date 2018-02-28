@@ -1,11 +1,11 @@
-## Laravel Artisan Commands Helper.
+## Laravel Passport Consumer.
 
 [![Latest Version on Packagist][ico-version]](https://packagist.org/packages/montross50/passport-consumer)
 [![Software License][ico-license]](LICENSE.md)
 [![Build Status](https://img.shields.io/travis/montross50/passport-consumer.svg?branch=master&style=flat-square)](https://travis-ci.org/montross50/passport-consumer)
 [![Total Downloads](https://img.shields.io/packagist/dt/montross50/passport-consumer.svg?style=flat-square)](https://packagist.org/packages/montross50/passport-consumer)
 
-This package will add some helpful commands to artisan. These commands are primarily used in development to reduce typing and increase productivity.
+This package lets you consume laravel passport local or remote with either the password grant flow or the authorization code flow. The aim is to allow you to focus on your app and leave oauth to passport and the consumption of said oauth to this package.
 
 ### Installation
 
